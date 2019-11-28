@@ -5,7 +5,7 @@ Version: 1.16.0
 Date: 2018-01-24
 Imports: matrixStats, methods, Rcpp
 LinkingTo: Rcpp
-Depends: Biobase
+Depends: Biobase, future.apply
 Suggests: testthat, BiocStyle
 Author: hong wang <hong.wang@uky.edu>, tingting zhai <tingting.zhai@uky.edu>, chi wang <chi.wang@uky.edu>
 Maintainer: tingting zhai <tingting.zhai@uky.edu>,hong wang <hong.wang@uky.edu>
