@@ -13,7 +13,7 @@ glm.LRT <- function(NanoStringData, design.full, Beta = ncol(design.full), contr
     
     
     Y = exprs(NanoStringData)
-    Y_n = sweep(Y, 2, lamda_i, FUN = "-")
+    Y_n = sweep(Y, 2, lamda_i, FUN = "background_threshold")
     Y_nph = sweep(Y_n, 2, k, FUN = "/")
     Y_nph[Y_nph <= 0] = 0.1
     
@@ -160,21 +160,16 @@ glm.LRT <- function(NanoStringData, design.full, Beta = ncol(design.full), contr
     
     }
 
-
 glmfit.full <- function(NanoStringData, design.full) {
-    
     
     c = positiveFactor(NanoStringData)
     d = housekeepingFactor(NanoStringData)
     k = c * d
     lamda_i = negativeFactor(NanoStringData)
     Y = exprs(NanoStringData)
-    Y_n = sweep(Y, 2, lamda_i, FUN = "-")
+    Y_n = sweep(Y, 2, lamda_i, FUN = "background_threshold")
     Y_nph = sweep(Y_n, 2, k, FUN = "/")
     Y_nph[Y_nph <= 0] = 0.1
-    
-    
-    
     
     nsamples = ncol(Y)
     ngenes = nrow(Y)
@@ -395,7 +390,7 @@ glmfit.reduce <- function(NanoStringData, design.reduce, m0, sigma, phi) {
     k = c * d
     lamda_i = negativeFactor(NanoStringData)
     Y = exprs(NanoStringData)
-    Y_n = sweep(Y, 2, lamda_i, FUN = "-")
+    Y_n = sweep(Y, 2, lamda_i, FUN = "background_threshold")
     Y_nph = sweep(Y_n, 2, k, FUN = "/")
     Y_nph[Y_nph <= 0] = 0.1
     
@@ -479,7 +474,7 @@ glmfit.OneGroup <- function(NanoStringData, m0, sigma, phi) {
     k = c * d
     lamda_i = negativeFactor(NanoStringData)
     Y = exprs(NanoStringData)
-    Y_n = sweep(Y, 2, lamda_i, FUN = "-")
+    Y_n = sweep(Y, 2, lamda_i, FUN = "background_threshold")
     Y_nph = sweep(Y_n, 2, k, FUN = "/")
     Y_nph[Y_nph <= 0] = 0.1
     

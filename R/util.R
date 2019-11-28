@@ -1,9 +1,12 @@
 rnegbinom <- function(n, mu = 1, phi = 0.01) {
     rpois(n, rgamma(n, shape = 1/phi, scale = mu * phi))
 }
+# Background Thresholding instead of subtraction as recommended by NanoString; it is less influential on low-count targets
+background_threshold <- function(Counts, NegCtl){
+    ifelse(Counts < NegCtl, 0, Counts)
+}
 
-
-est.dispersion <- function(Y, Y_nph, lamda_i, c, d) {
+est.dispersion <- function(Y, Y_nph, lamda_i, c, d, cluster = cl) {
     
     nsamples = ncol(Y)
     
@@ -21,21 +24,19 @@ est.dispersion <- function(Y, Y_nph, lamda_i, c, d) {
             tmp2 = 1 - tmp1
             tmp2[tmp2==0] = 1e-08
             tmp3.p = fun5(cbind(matrix(y, ncol = 1), matrix(lamda_i, ncol = 1), 
-                                matrix(tmp2, ncol = 1),rep(alpha,length(y))))
+                                matrix(tmp2, ncol = 1), rep(alpha,length(y))))
             -tmp3.p
         }
         return(optimize(obj, interval = c(1e-08, 1e+08))$minimum)
     }
     
-    
-    phi.g = apply(cbind(matrix(Y, ncol = nsamples), 
-                        matrix(muY, ncol = nsamples)), 1, get.phihat)
+    phi.g = future_apply(cbind(matrix(Y, ncol = nsamples),
+                               matrix(muY, ncol = nsamples)), 1, get.phihat)
     
     lphi = log(phi.g)
     
     list(phi = phi.g, eta = lphi)
 }
-
 
 compute.baseSigma <- function(phi0, Y, muY, nsamples) {
     set.seed(123)
