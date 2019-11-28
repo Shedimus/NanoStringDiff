@@ -1,0 +1,469 @@
+%\VignetteIndexEntry{NanoStringDiff Vignette}
+%\VignettePackage{NanoStringDiff}
+%\VignetteKeyword{NanoString}
+%\VignetteKeyword{Differential Expression}
+
+\documentclass[12pt]{article}
+
+\usepackage{float}
+\usepackage{Sweave}
+
+\usepackage{amssymb}
+
+
+\RequirePackage{Bioconductor}
+\AtBeginDocument{\bibliographystyle{unsrturl}}
+
+\renewcommand{\baselinestretch}{1.3}
+
+
+\SweaveOpts{keep.source=TRUE,eps=FALSE,include=TRUE,width=4,height=4}
+
+
+
+\author{Hong Wang$^{1}$, Chi Wang$^{2,3}$\footnote{to whom correspondence 
+should be addressed} \\[1em] 
+\small{$^{1}$Department of Statistics , University of Kentucky,Lexington, KY;}\\ 
+\small{$^{2}$Markey Cancer Center, University of Kentucky, Lexington, KY ;}\\ 
+\small{$^{3}$Department of Biostatistics, University of Kentucky, 
+Lexington, KY;}\\ 
+\small{\texttt{hong.wang@uky.edu}}}
+
+
+
+\title{\textsf{\textbf{The NanoStringDiff package}}}
+
+%\bibliographystyle{abbrv}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\maketitle
+
+\begin{abstract}
+This vignette introduces the use of the Bioconductor package 
+NanoStringDiff, which is designed for differential analysis based on 
+NanoString nCouner Data. NanoStringDiff considers a generalized linear 
+model of the negative binomial family to characterize count data and
+allows for multi-factor design. Data normalization is incorporated in
+the model framework by including data normalization parameters estimated 
+from positive controls, negative controls and housekeeping genes embedded 
+in the nCounter system. Present method propose an empirical Bayes shrinkage 
+approach to estimate the dispersion parameter and a likelihood ratio test 
+to identify differential expression genes.
+
+
+
+\end{abstract}
+
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+
+\section{Citation}
+The package {\tt NanoStringDiff} implements statistical methods from the 
+following publication. If you use {\tt NanoStringDiff} in the published 
+research, please cite: \\
+Hong Wang, Craig Horbinski, Hao Wu, Yinxing Liu,Arnold J. Stromberg 
+and Chi Wang: A Negative Binomial Model-Based Method for Differential 
+Expression Analysis Based on NanoString nCounter Data.(Manuscript)
+
+\section{Quick Start}
+This section show the most basic steps for a differential expression analysis 
+for NanoString nCounter Data:
+\begin{enumerate}
+\item Create a {\tt NanoStringSet} object using {\tt createNanoStingSet} 
+      or {\tt createNanoStringSetFromCsv }(see examples in the Data Input section). 
+      In this section we use {\tt NanoStringData} directly, which is an object 
+      of {\tt NanoStringSet} contained in the package. 
+\item Make a design matrix to describe treatment conditions. 
+\item Estimate norlamization factors including positive size factors, 
+      housekeeping size factors and background noise using 
+      {\tt estNormalizationFactors}
+\item Perform a likelihood ratio test using {\tt glm.LRT}. 
+\end{enumerate}
+
+
+<<quick start , eval=FALSE >>=
+library("Biobase")
+library("NanoStringDiff")
+data(NanoStringData)
+pheno=pData(NanoStringData)
+design.full=model.matrix(~0+pheno$group)
+NanoStringData=estNormalizationFactors(NanoStringData)
+result=glm.LRT(NanoStringData,design.full,contrast=c(1,-1))
+@
+
+Here, the data NanoStringData contained in the package is an animal data,
+we called {\tt MoriData}\cite{mori2014hippo}. Mori et al tried to study the
+possible reasons responsible for the widespread miRNA repression observed 
+in cancer, global microRNA expression in mouse liver normal tissues and 
+liver tumors induced by deletion of Nf2 (merlin) profiled by nCounter 
+Mouse miRNA Expression Assays. Expressions of 599 miRNAs were profiled 
+for two replicates in each group. 
+
+
+
+\section{Data Input}
+NanoStringDiff works on matrix of integer read counts from NanoString 
+nCounter analyzer with endogenes, positive control genes, negative 
+control genes and housekeeping control genes. For the matrix, rows 
+corresponding to genes and columns to independent samples or replicates. 
+The counts represent the total number of reads aligning to each gene
+(or other genomic locus).
+
+The count values must be raw counts of NanoString nCounter data, since 
+data normalization is incorporated in the model framework by including 
+data normalization parameters estimated from positive controls, negative 
+controls and housekeeping genes using function {\tt estNormalizationFactors}. 
+Hence, please do not supply normalized counts.
+
+There must be have six positive control genes order by different 
+concentrations from high to low, since NanoString nCounter analyzer 
+provide six different samll positive controls with six different 
+concentrations in the 30 uL hybridization: 128 fM, 32 fM, 8 fM, 
+2 fM, 0.5 fM, and 0.125 fM. No such restriction for negative control 
+genes and housekeeping control genes.Nanostring recommends at least 
+three housekeeping genes, but the more that are included, the more 
+accurate the normalization will be.
+
+\subsection{Create NanoStringSet from csv.file}
+The data produced by the nCounter Digital Analyzer are exported as 
+a Reporter  Code Count (RCC) file. RCC files are comma-separated 
+text(.csv) files that contain the counts for each gene in a sample 
+and the data for each sample hybridization are contained in a 
+separate RCC file. So before you call {\tt createNanoStringSetFromCsv} 
+to creat a {\tt NanoStringSet} object, you should create a csv.file 
+to combine all interesting samples together, and the first three 
+columns shoud be "CodeClass", "Name" ane "Accession", the counts 
+data contained from the $4^{th}$ column to the last column.
+
+Note:
+\begin{enumerate}
+\item The $1^{st}$ column "CodeClass" should specify the function 
+of genes as "Positive", "Negative","Housekeeping" or "Endogenous".
+\item Some data set have "Spikein" genes, you need delete these 
+"spikein" genes or you could just leave there if you use 
+{\tt createNanoStringSetFromCsv} to creat {\tt NanoStringSet} 
+object(See example in the Data Input section). But NanoStringDiff 
+only works with "positive", "negative", housekeeping" and "endogenous".
+\end{enumerate}
+
+
+The "csv.file" should looks like as following Figure:
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{example.PNG}
+  \caption{Example of csv.file pattern}
+  \label{example}
+\end{figure}
+
+
+
+
+When you created a csv.file, you will specify a variable which 
+points on the directory in which your csv.file is located
+
+<<directory, eval=FALSE>>=
+directory <- "/path/to/your/files/"
+@ 
+
+
+However, for demonstration purposes only, the following line of 
+code points to the directory for the "Mori.csv" in the 
+NanoStringDiff package.
+
+<<GetDirectory>>=
+directory <- system.file("extdata", package="NanoStringDiff", mustWork=TRUE)
+path<-paste(directory,"Mori.csv",sep="/")
+@ 
+
+
+The phenotype informations of the data should be stored as data frame.
+<<MakePhenotypeData>>=
+designs=data.frame(group=c("Normal","Normal","Tumor","Tumor"))
+designs
+@
+
+
+<<CsvInput>>=
+library("NanoStringDiff")
+NanoStringData=createNanoStringSetFromCsv(path,header=TRUE,designs)
+NanoStringData
+@
+
+
+
+\subsection{Create NanoStringSet from matrix}
+If you already read your positive control genes, negative control genes, 
+housekeeping control genes and endogous into R session separately and 
+stored as matrix, then you can use {\tt createNanoStringSet} to create a 
+{\tt NanoStringSet} object.
+
+
+<<MatrixInput>>=
+endogenous=matrix(rpois(100,50),25,4)
+colnames(endogenous)=paste("Sample",1:4)
+positive=matrix(rpois(24,c(128,32,8,2,0.5,0.125)*80),6,4)
+colnames(positive)=paste("Sample",1:4)
+negative=matrix(rpois(32,10),8,4)
+colnames(negative)=paste("Sample",1:4)
+housekeeping=matrix(rpois(12,100),3,4)
+colnames(housekeeping)=paste("Sample",1:4)
+designs=data.frame(group=c("Control","Control","Treatment","Treatment"),
+                   gender=c("Male","Female","Female","Male"),
+                   age=c(20,40,39,37))
+NanoStringData1=createNanoStringSet(endogenous,positive,
+                                 negative,housekeeping,designs)
+NanoStringData1
+pData(NanoStringData1)
+head(exprs(NanoStringData1))
+@
+
+
+
+
+\section{Differential Expression Analysis for Single Factor Experiment}
+
+
+For general experiments, once normalization factors obtained using 
+{\tt estNormalizationFactors}, given a design matrix and contrast,
+we can proceed with testing procedures for determing differential 
+expression using the generalized linear model (GLM) likelihood ratio 
+test. The testing can be done by using the function {\tt glm.LRT} and
+return a list with a component is table including: logFC ,lr, pvalue
+and qvalue(adjust p value using the procedure of Benjamini and Hochberg).
+
+
+\subsection{Two Group Comparisons}
+
+The simplest and most common type of experimental design is two group 
+comparison,like treatment group vs control group. As a brief example,
+consider a simple situation with control group and  treatment group, 
+each with two replicates, and the researcher wants to make comparisons
+between them. Here, we still use {\tt NanoSreingData1} we created above
+to demonstrate this example.
+
+
+Make design matrix using {\tt model.matrix}:
+<<MakeDesignMatrix1>>=
+pheno=pData(NanoStringData1)
+group=pheno$group
+design.full=model.matrix(~0+group)
+design.full
+@
+Note that there is no intercept column in the dasign matrix, each column is 
+for each group, since we include {\tt 0+} in the model formula.
+
+
+If the researcher want compare Treatment to Control, that is Treatment- Control,
+the contrast vector is try to the comparison -1*Control+1*Treatment, so the 
+contrast is :
+
+<<MakeContrast>>=
+contrast=c(-1,1)
+@
+
+
+Estimate normalization factors and return the same object with positiveFactor,
+negativeFactor and housekeepingFactor slots filled or replaced:
+<<GetControls>>=
+NanoStringData1=estNormalizationFactors(NanoStringData1)
+positiveFactor(NanoStringData1)
+negativeFactor(NanoStringData1)
+housekeepingFactor(NanoStringData1)
+@
+
+
+Generalize linear model likelihood ratio test:
+<<result1>>=
+result=glm.LRT(NanoStringData1,design.full,contrast=contrast)
+head(result$table)
+str(result)
+@
+
+Note that the text Treatment compare to Control tells you that the estimates 
+of logFC is log2(Treatment/Control).
+
+
+
+
+
+
+
+
+
+
+\subsection{Pairwise Comparisons}
+Now consider a researcher has three treatment groups say A, B and C, 
+and researcher wants to compare each groups like: B compare to A, 
+C compare to A, and B compare to C.
+
+
+First create an object of {\tt NanoStringSet} with pseudo data:
+<<CreatePseudoData>>=
+endogenous=matrix(rpois(300,50),25,12)
+colnames(endogenous)=paste("Sample", 1:12)
+colnames(endogenous)=paste("Sample",1:12)
+positive=matrix(rpois(72,c(128,32,8,2,0.5,0.125)*80),6,12)
+negative=matrix(rpois(96,10),8,12)
+housekeeping=matrix(rpois(36,100),3,12)
+designs=data.frame(group=c(rep("A",4),rep("B",4),rep("C",4)),
+                   gender=rep(c("Male","Male","Female","Female"),3),
+                   age=c(20,40,39,37,29,47,23,45,34,65,35,64))
+NanoStringData2=createNanoStringSet(endogenous,positive,
+                                 negative,housekeeping,designs)
+NanoStringData2
+pData(NanoStringData2)
+@
+
+
+
+Make design matrix only consider one experimential factor {\tt group}: 
+<<MakeDesignMatrix2>>=
+pheno=pData(NanoStringData2)
+group=pheno$group
+design.full=model.matrix(~0+group)
+design.full
+@
+
+Estimate normalization factors:
+<<AssignSizeFactors>>=
+NanoStringData2=estNormalizationFactors(NanoStringData2)
+@
+
+B compare to A, the contrast should be (-1,1,0)
+<<result2,eval=FALSE>>=
+result=glm.LRT(NanoStringData2,design.full,contrast=c(-1,1,0))
+@
+
+
+C compare to A, the contrast should be (-1,0,1)
+<<result3,eval=False>>=
+result=glm.LRT(NanoStringData2,design.full,contrast=c(-1,0,1))
+@
+
+
+B compare to c, the contrast should be (0,1,-1)
+<<result4,eval=FALSE>>=
+result=glm.LRT(NanoStringData2,design.full,contrast=c(0,1,-1))
+@
+
+
+
+
+The other way to creat a design matrix in R is to include an intercept 
+term to represents the base level of the factor. We just omitte 
+the {\tt 0+} in the model formula when we create design matrix using 
+model.matrix function:
+
+<<MakeDesignMatrix3>>=
+design.full=model.matrix(~group)
+design.full
+@
+
+In this sitution, the first coefficient measure the log scaler of baseline 
+mean expression level in group A, and the second and  third column are now 
+relative to the baseline, not represent the mean expression level in 
+group B and C. So, if we want to compare B to A, now that is equivalent 
+to test the $2^{nd}$ coefficient equal to 0.
+
+<<result5,eval=False>>=
+result=glm.LRT(NanoStringData2,design.full,Beta=2)
+@
+
+Beta=3 means compare C to A:
+
+<<result6,eval=False>>=
+result=glm.LRT(NanoStringData2,design.full,Beta=3)
+@
+
+
+
+
+
+
+\subsection{Multigroup Comparisons}
+
+NanoStringDiff can do multigroup comparisons, for example if we want 
+compare group A to the average of group B and C, 
+
+<<MakeDesignMatrix4,eval=FALSE>>=
+design.full=model.matrix(~0+group)
+result=glm.LRT(NanoStringData2,design.full,contrast=c(1,-1/2,-1/2))
+@
+
+
+
+\section{Differential Expression Analysis for Multifactor Experiment}
+
+In this section, we still use {\tt NanoStringData2} in examples, but the above 
+examples all cotnsider single factor {\tt treatment condition} , now we include 
+the other experiment factor {\tt gender} to consider multifactor problems.
+
+
+\subsection{Nested Interactions}
+First, we form the design matrix use factors {\tt group} and interaction 
+between {\tt group} and {\tt gender}:
+<<MakeDesignMatrix5>>=
+design=pData(NanoStringData2)[,c("group","gender")]
+group=design$group
+gender=design$gender
+design.full=model.matrix(~group+group:gender)
+design.full
+@
+
+Here, we consider the mean expression level of female in group A as the 
+baseline expression level, if we want to test the effect of gender in 
+group A, we can use Beta=4,
+<<result7,eval=False>>=
+result=glm.LRT(NanoStringData2,design.full,Beta=4)
+@
+
+
+Compare treatment group B to A ignore the effect the gender, 
+<<result8,eval=False>>=
+result=glm.LRT(NanoStringData2,design.full,Beta=2)
+@
+
+
+Consider the interaction effect between gender and group B compare to A:
+<<result9,eval=False>>=
+result=glm.LRT(NanoStringData2,design.full,Beta=c(2,5))
+@
+
+
+\subsection{All Interactions}
+We also can form a design matrix consider all interactions:
+<<MakeDesignMatrix6>>=
+design.full=model.matrix(~group+gender+group:gender)
+@
+
+Which is equivalent to:
+<<MakeDesignMatrix7>>=
+design.full=model.matrix(~group*gender)
+design.full
+@
+
+
+Test the gender effect in Treatment group B:
+<<result10,eval=FALSE>>=
+result=glm.LRT(NanoStringData2,design.full,Beta=4:5)
+@
+
+
+
+\section{Session Info}
+
+<<sessionInfo, results=tex, print=TRUE, eval=TRUE>>=
+toLatex(sessionInfo())
+@
+
+\bibliography{reference}
+
+
+\end{document}

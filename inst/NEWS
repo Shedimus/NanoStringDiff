@@ -1,0 +1,6 @@
+CHANGES IN VERSION 0.99.0
+----------------------
+
+NEW FEATURES
+
+  o Improved the NanoStringDiff algorithm by developing an approximation method to calculate the likelihood function of NanoStringDiff. Introduced several quality control and data visualization plots

@@ -1,0 +1,28 @@
+Package: NanoStringDiff
+Type: Package
+Title: Differential Expression Analysis of NanoString nCounter Data
+Version: 1.16.0
+Date: 2018-01-24
+Imports: matrixStats, methods, Rcpp
+LinkingTo: Rcpp
+Depends: Biobase
+Suggests: testthat, BiocStyle
+Author: hong wang <hong.wang@uky.edu>, tingting zhai <tingting.zhai@uky.edu>, chi wang <chi.wang@uky.edu>
+Maintainer: tingting zhai <tingting.zhai@uky.edu>,hong wang <hong.wang@uky.edu>
+Description: This Package utilizes a generalized linear model(GLM) of
+        the negative binomial family to characterize count data and
+        allows for multi-factor design. NanoStrongDiff incorporate size
+        factors, calculated from positive controls and housekeeping
+        controls, and background level, obtained from negative
+        controls, in the model framework so that all the normalization
+        information provided by NanoString nCounter Analyzer is fully
+        utilized.
+License: GPL
+biocViews: DifferentialExpression, Normalization
+NeedsCompilation: yes
+Packaged: 2019-10-30 01:32:19 UTC; biocbuild
+git_url: https://git.bioconductor.org/packages/NanoStringDiff
+git_branch: RELEASE_3_10
+git_last_commit: 1f10952
+git_last_commit_date: 2019-10-29
+Date/Publication: 2019-10-29
