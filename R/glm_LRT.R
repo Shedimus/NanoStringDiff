@@ -15,7 +15,7 @@ glm.LRT <- function(NanoStringData, design.full, Beta = ncol(design.full), contr
     Y = exprs(NanoStringData)
     Y_n = sweep(Y, 2, lamda_i, FUN = "background_threshold")
     Y_nph = sweep(Y_n, 2, k, FUN = "/")
-    Y_nph[Y_nph <= 0] = 0
+    Y_nph[Y_nph <= 0] = 0.1
     
     X.full = design.full
     nsamples = ncol(Y)
@@ -35,7 +35,7 @@ glm.LRT <- function(NanoStringData, design.full, Beta = ncol(design.full), contr
     
     ## Make reduced design matrix.
     ## Here we borrow the idea from paskage edgeR to make reduced design matrix
- 
+    
     if (is.null(contrast)) {
         if (length(Beta) > 1) 
             Beta = unique(Beta)
@@ -155,7 +155,7 @@ glm.LRT <- function(NanoStringData, design.full, Beta = ncol(design.full), contr
          design.reduce = design.reduce, Beta.full = Beta.full, mean.full = U.full, 
          Beta.reduce = Beta.reduce, mean.reduce = U.reduce, m0 = m0, sigma = sigma)
     
-    }
+}
 
 glmfit.full <- function(NanoStringData, design.full) {
     
@@ -166,7 +166,7 @@ glmfit.full <- function(NanoStringData, design.full) {
     Y = exprs(NanoStringData)
     Y_n = sweep(Y, 2, lamda_i, FUN = "background_threshold")
     Y_nph = sweep(Y_n, 2, k, FUN = "/")
-    Y_nph[Y_nph <= 0] = 0
+    Y_nph[Y_nph <= 0] = 0.1
     
     nsamples = ncol(Y)
     ngenes = nrow(Y)
@@ -389,7 +389,7 @@ glmfit.reduce <- function(NanoStringData, design.reduce, m0, sigma, phi) {
     Y = exprs(NanoStringData)
     Y_n = sweep(Y, 2, lamda_i, FUN = "background_threshold")
     Y_nph = sweep(Y_n, 2, k, FUN = "/")
-    Y_nph[Y_nph <= 0] = 0
+    Y_nph[Y_nph <= 0] = 0.1
     
     
     
@@ -473,7 +473,7 @@ glmfit.OneGroup <- function(NanoStringData, m0, sigma, phi) {
     Y = exprs(NanoStringData)
     Y_n = sweep(Y, 2, lamda_i, FUN = "background_threshold")
     Y_nph = sweep(Y_n, 2, k, FUN = "/")
-    Y_nph[Y_nph <= 0] = 0
+    Y_nph[Y_nph <= 0] = 0.1
     
     
     
