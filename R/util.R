@@ -45,12 +45,17 @@ compute.baseSigma <- function(phi0, Y, muY, nsamples) {
     c = rep(1, nsamples)
     d = rep(1, nsamples)
     lamda = rep(20, nsamples)
-    for (i in 1:nsim) {
-        Ysim <- matrix(rnegbinom(length(Y), muY, phi = phi0), ncol = nsamples)
-        ## assume 20 is background noise
-        lag.sim = est.dispersion(Ysim + 20, Ysim, lamda, c, d)$eta
-        sigma = IQR(lag.sim, na.rm = TRUE)/1.349
-        res[i] = sigma^2
-    }
+    doParallel::registerDoParallel(detectCores())
+    res = foreach(i = seq_along(1:nsim), 
+                  .export = c("rnegbinom", "fun5", "est.dispersion", "BelowThresh"), 
+                  .packages = c("future.apply"),
+                  .combine = "c") %dopar% {
+                      Ysim <- matrix(rnegbinom(length(Y), muY, phi = phi0), ncol = nsamples)
+                      ## assume 20 is background noise
+                      lag.sim = est.dispersion(Y = Ysim + 20, Y_nph = Ysim, lamda_i = lamda, c = c, d = d)$eta
+                      sigma = IQR(lag.sim, na.rm = TRUE)/1.349
+                      sigma^2
+                  }
     mean(res)
+    doParallel::stopImplicitCluster()
 } 
