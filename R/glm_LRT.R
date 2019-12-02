@@ -187,20 +187,20 @@ glmfit.full <- function(NanoStringData, design.full) {
     phi.g = est.dispersion(Y, Y_nph, lamda_i, c, d)$phi
     
     
-    ii = rowMins(Y) > max(negativeControl(NanoStringData))
+    BelowThresh = rowMins(Y) > max(negativeControl(NanoStringData))
     
     
-    l = length(which(ii == TRUE))
+    l = length(which(BelowThresh == TRUE))
     if (l > 0) {
         
-        phi.g0 = phi.g[ii]
+        phi.g0 = phi.g[BelowThresh]
         lphi.g0 = log(phi.g0)
         m0 = median(lphi.g0, na.rm = TRUE)
         sigma2.mar = (IQR(lphi.g0, na.rm = TRUE)/1.349)^2
         # Here we borrow the idea to compute the base sigma for DSS The function
         # compute.baseSigma borrow the idea from Hao Wu's function
         # compute.baseSigma.nontrend in DSS Package
-        sigma2.base = compute.baseSigma(exp(m0), Y[ii, ], V[ii, ], nsamples)
+        sigma2.base = compute.baseSigma(exp(m0), Y[BelowThresh, ], V[BelowThresh, ], nsamples)
         sigma = sqrt(max(sigma2.mar - sigma2.base, 0.01))
     } else {
         cat("There is no data satisied that min of endo great than max 

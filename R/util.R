@@ -7,7 +7,7 @@ background_threshold <- function(Counts, NegCtl){
 }
 
 est.dispersion <- function(Y, Y_nph, lamda_i, c, d, cluster = cl) {
-    
+    plan(multiprocess)
     nsamples = ncol(Y)
     
     mu = rowMeans(Y_nph)
