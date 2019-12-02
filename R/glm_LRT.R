@@ -1,5 +1,5 @@
 glm.LRT <- function(NanoStringData, design.full, Beta = ncol(design.full), contrast = NULL) {
-    
+    plan(multiprocess)
     c = positiveFactor(NanoStringData)
     d = housekeepingFactor(NanoStringData)
     k = c * d
@@ -183,13 +183,13 @@ glmfit.full <- function(NanoStringData, design.full) {
     
     U = exp(Blm %*% t(design.full))
     V = sweep(U, 2, k, FUN = "*")
-    
+    tictoc::tic(msg = "Est dispersion")
     phi.g = est.dispersion(Y, Y_nph, lamda_i, c, d)$phi
-    
+    tictoc::toc()
     
     BelowThresh = rowMins(Y) > max(negativeControl(NanoStringData))
     
-    
+    tictoc::tic(msg = "sigma base")
     l = length(which(BelowThresh == TRUE))
     if (l > 0) {
         
@@ -209,14 +209,11 @@ glmfit.full <- function(NanoStringData, design.full) {
         sigma = 1
         lphi.g0 = 10
     }
-    
+    tictoc::toc()
     
     max.phi = max(lphi.g0, 10, na.rm = TRUE)
     max.mean = max(rowMeans(Y_nph))
-    
-    
-    
-    
+ 
     get.phi <- function(dat) {
         y = dat[1:nsamples]
         Ey = dat[nsamples + (1:nsamples)]
@@ -301,9 +298,10 @@ glmfit.full <- function(NanoStringData, design.full) {
     id = c(1:ngenes)
     Beta.full = matrix(0, ngenes, nbeta)
     phi.full = rep(0, ngenes)
-    
+    tictoc::tic(msg = "Get phi")
     phi.s = apply(cbind(matrix(Y, ncol = nsamples), matrix(V, ncol = nsamples)), 
                   1, get.phi)
+    tictoc::toc()
     B.s = Blm
     Y.t = Y
     
@@ -313,16 +311,18 @@ glmfit.full <- function(NanoStringData, design.full) {
     j = 0
     while ((con11 >= 0.5 | con21 >= 0.001) & j < 50) {
         j = j + 1
+        tictoc::tic(msg = "Get Beta")
         Beta = apply(cbind(matrix(Y.t, ncol = nsamples), matrix(phi.s, ncol = 1), 
                            matrix(B.s, ncol = nbeta)), 1, get.beta.full)
-        
+        tictoc::toc()
         xb = t(design.full %*% Beta)
         xb[xb > 700] = 700         ## control the upper band of exp operation
         U.t = exp(xb)
         V.t = sweep(U.t, 2, k, FUN = "*")
-        
+        tictoc::tic(msg = "phi.t")
         phi.t = apply(cbind(matrix(Y.t, ncol = nsamples), matrix(V.t, ncol = nsamples)), 
                       1, get.phi)
+        tictoc::toc()
         con1 = rowMaxs(abs((B.s - t(Beta))/t(Beta)))
         con2 = abs((phi.s - phi.t)/phi.s)
         con11 = max(con1)
